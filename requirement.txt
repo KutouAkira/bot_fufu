@@ -1,0 +1,8 @@
+kuriyama
+json5
+pillow
+baidu-aip
+numpy
+pyyaml
+tensorflow-gpu
+scikit-image
