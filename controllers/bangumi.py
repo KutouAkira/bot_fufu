@@ -27,6 +27,8 @@ class bangumi(reactor):
                 return False
             elif str(day) == "['']":
                 return 6
+            elif day[0] not in youbi_map:
+                return  False
             else:
                 return youbi_map[day[0]]
         return False
