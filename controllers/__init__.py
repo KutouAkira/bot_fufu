@@ -6,6 +6,7 @@ from .bangumi import bangumi
 from .bang import bang
 from .SauceNAO import SauceNAO
 from .cars import cars
+from .birthday import birthday
 
 __all__ = (
     "AntiEro",
@@ -15,5 +16,6 @@ __all__ = (
     "bangumi",
     "bang",
     "SauceNAO",
-    "cars"
+    "cars",
+    "birthday"
 )

@@ -127,6 +127,13 @@
       "r18_trigger": "爆破",
       "gray_trigger": "G",
       "color_trigger": "C"
+    },
+    "birthday": {
+      "group": null,
+      "friend": null,
+      "trigger": [
+        "二刺螈生日"
+      ]
     }
   }
 }
