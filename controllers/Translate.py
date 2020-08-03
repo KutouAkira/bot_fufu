@@ -188,7 +188,12 @@ class Translate(reactor):
         #                 trans.close()
         #         if toLang == 'ja':
         #             return result[7][1]
-        return result[0][0][0]
+        #
+        # 启用旧的功能提供罗马音和平假名
+        if toLang == 'ja-Latn' or toLang == 'ja-Hrgn':
+            return str(result)
+        else:
+            return result[0][0][0]
 
     google_dict = {"zh": "zh-CN", "jp": "ja", "en": "en"}
 
@@ -197,10 +202,16 @@ class Translate(reactor):
         result = self.__check__(user, message)
         if result:
             fromLang, toLang, q = result
-            baidu_res = self.BDtranslate(fromLang, toLang, q)
-            google_res = self.googleTrans(self.google_dict[fromLang], self.google_dict[toLang], q)
-            message = [
-                Plain("度娘: " + baidu_res + "\n"),
-                Plain("谷歌: " + google_res)
-            ]
+            # 启用旧的功能提供罗马音和平假名
+            if ('ja-Latn' == fromLang or 'ja-Hrgn' == fromLang)\
+                    or ('ja-Latn' == toLang or 'ja-Hrgn' == toLang):
+                google_res = self.googleTrans(fromLang, toLang, q)
+                message = [Plain(google_res)]
+            else:
+                baidu_res = self.BDtranslate(fromLang, toLang, q)
+                google_res = self.googleTrans(self.google_dict[fromLang], self.google_dict[toLang], q)
+                message = [
+                    Plain("度娘: " + baidu_res + "\n"),
+                    Plain("谷歌: " + google_res)
+                ]
             yield message

@@ -55,7 +55,8 @@ def search_groups(pattern: str, flags: T.Sequence[str], text: str) -> T.Optional
         p = pattern.find(flag)
         if p != -1:
             position.append((flag, p))
-            regex = regex.replace(flag, "(.*)")
+            regex = regex.replace(flag, "(.*?)")
+            regex += "$"
     position.sort(key=lambda x: x[1])
 
     match_result = re.search(regex, text)

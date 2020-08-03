@@ -6,6 +6,7 @@ from controllers.reactor import reactor, plain_str
 help = '''命令列表：
  - 好好说话 +句子(翻译缩写)
  - 搜图+图片(SauceNAO搜索)
+ - 二刺螈生日(今天是哪些角色的生日)
  - 邦 +服务器代号(jp,en,tw,cn,kr)查看活动信息
  - 开车/爆破(普通/R18色图),后跟字母G/C(灰色色/迷彩幻影坦克)
  - 看(前天/昨天/今天/明天/后天的)番(默认今天，数据来自bilibili)
