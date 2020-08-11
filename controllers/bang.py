@@ -27,6 +27,29 @@ class bang(reactor):
                 return result
         return False
 
+    def getEventId(self, events, serverId):
+        if events:
+            now = int(time.time()) * 1000
+            eventId = None
+            end = None
+            for i in events:
+                event = events[i]
+                if event['endAt'][serverId] != None and int(event['endAt'][serverId]) > now and (
+                        eventId == None or int(event['endAt'][serverId]) < end):
+                    eventId = int(i)
+                    end = int(event['endAt'][serverId])
+            if eventId:
+                return eventId
+            eventId = None
+            end = None
+            for i in events:
+                event = events[i]
+                if event['endAt'][serverId] != None and (eventId == None or int(event['endAt'][serverId]) < end):
+                    eventId = int(i)
+                    end = int(event['endAt'][serverId])
+            return eventId + 1 if events[eventId + 1] else eventId
+        return None
+
     def bang(self, q):
         bestDR = None
         banDR = None
@@ -34,15 +57,15 @@ class bang(reactor):
         server = dict(zip(['jp', 'en', 'tw', 'cn', 'kr'], [0, 1, 2, 3, 4]))
         try:
             # 获取活动id
-            if self.proxy:
-                banDR = http.client.HTTPSConnection(self.proxy_server, self.proxy_port)
-            else:
-                banDR = http.client.HTTPSConnection('api.bandori.ga')
-            banDR.set_tunnel('api.bandori.ga')
-            banDR.request('GET', '/v1/' + q + '/event')
-            response = banDR.getresponse()
-            result_all = response.read().decode("utf-8")
-            event_id = str(json.loads(result_all)['eventId'])
+            # if self.proxy:
+            #     banDR = http.client.HTTPSConnection(self.proxy_server, self.proxy_port)
+            # else:
+            #     banDR = http.client.HTTPSConnection('api.bandori.ga')
+            # banDR.set_tunnel('api.bandori.ga')
+            # banDR.request('GET', '/v1/' + q + '/event')
+            # response = banDR.getresponse()
+            # result_all = response.read().decode("utf-8")
+            # event_id = str(json.loads(result_all)['eventId'])
 
             # 获取活动信息
             if self.proxy:
@@ -53,7 +76,9 @@ class bang(reactor):
             bestDR.request('GET', '/api/events/all.3.json')
             response = bestDR.getresponse()
             result_all = response.read().decode("utf-8")
-            result = json.loads(result_all)[event_id]
+            result = json.loads(result_all)
+            event_id = self.getEventId(result, int(server[q]))
+            result = json.loads(result_all)[str(event_id)]
             name = result['eventName'][int(server[q])]
             banner = 'https://bestdori.com/assets/' + q + '/homebanner_rip/' + result['bannerAssetBundleName'] + '.png'
 
