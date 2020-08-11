@@ -59,9 +59,9 @@ class bang(reactor):
             # 获取活动id
             # if self.proxy:
             #     banDR = http.client.HTTPSConnection(self.proxy_server, self.proxy_port)
+            #     banDR.set_tunnel('api.bandori.ga')
             # else:
             #     banDR = http.client.HTTPSConnection('api.bandori.ga')
-            # banDR.set_tunnel('api.bandori.ga')
             # banDR.request('GET', '/v1/' + q + '/event')
             # response = banDR.getresponse()
             # result_all = response.read().decode("utf-8")
@@ -70,9 +70,9 @@ class bang(reactor):
             # 获取活动信息
             if self.proxy:
                 bestDR = http.client.HTTPSConnection(self.proxy_server, self.proxy_port)
+                bestDR.set_tunnel('bestdori.com')
             else:
                 bestDR = http.client.HTTPSConnection('bestdori.com')
-            bestDR.set_tunnel('bestdori.com')
             bestDR.request('GET', '/api/events/all.3.json')
             response = bestDR.getresponse()
             result_all = response.read().decode("utf-8")
