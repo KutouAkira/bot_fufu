@@ -39,16 +39,16 @@ class bang(reactor):
                     eventId = int(i)
                     end = int(event['endAt'][serverId])
             if eventId:
-                return eventId
+                return eventId, None
             eventId = None
             end = None
             for i in events:
                 event = events[i]
-                if event['endAt'][serverId] != None and (eventId == None or int(event['endAt'][serverId]) < end):
+                if event['endAt'][serverId] != None and (eventId == None or int(event['endAt'][serverId]) > end):
                     eventId = int(i)
                     end = int(event['endAt'][serverId])
-            return eventId + 1 if events[eventId + 1] else eventId
-        return None
+            return eventId, eventId+1 if events[str(eventId+1)] else None
+        return None, None
 
     def bang(self, q):
         bestDR = None
@@ -77,7 +77,7 @@ class bang(reactor):
             response = bestDR.getresponse()
             result_all = response.read().decode("utf-8")
             result = json.loads(result_all)
-            event_id = self.getEventId(result, int(server[q]))
+            event_id, next_event = self.getEventId(result, int(server[q]))
             result = json.loads(result_all)[str(event_id)]
             name = result['eventName'][int(server[q])]
             banner = 'https://bestdori.com/assets/' + q + '/homebanner_rip/' + result['bannerAssetBundleName'] + '.png'
@@ -91,8 +91,14 @@ class bang(reactor):
             restr = '\n名称: ' + name + '\n开始于: ' + str(start_time) + '\n结束于: ' + str(end_time)
 
             # 处理剩余时间
+            pre = int((start_time - now).total_seconds())
             left = int((end_time - now).total_seconds())
-            if left > 0:
+            if pre > 0:
+                m, s = divmod(pre, 60)
+                h, m = divmod(m, 60)
+                d, h = divmod(h, 24)
+                restr += '\n还有: %d天%02d小时%02d分%02d秒开始' % (d, h, m, s)
+            elif left > 0:
                 m, s = divmod(left, 60)
                 h, m = divmod(m, 60)
                 d, h = divmod(h, 24)
@@ -106,6 +112,16 @@ class bang(reactor):
             res.append(banner)
             res.append(restr)
 
+            # 处理日服外其他服的下一个活动
+            if next_event:
+                next_result = json.loads(result_all)[str(next_event)]
+                next_name = next_result['eventName'][0]
+                next_banner = 'https://bestdori.com/assets/jp/homebanner_rip/' + next_result[
+                    'bannerAssetBundleName'] + '.png'
+                next_restr = '\n名称: ' + next_name
+                res.append(next_banner)
+                res.append(next_restr)
+
         except Exception as e:
             res.append('https://http.cat/500')
             res.append(str(e))
@@ -113,17 +129,21 @@ class bang(reactor):
         finally:
             if bestDR:
                 bestDR.close()
-            if banDR:
-                banDR.close()
-        return res
+            # if banDR:
+            #     banDR.close()
+        return res, next_event
 
     async def generate_reply(self, bot: Mirai, source: Source, user: T.Union[Group, Friend], message: MessageChain,
                              member: Member):
         req = self.__check__(user, message)
         if req:
-            result = self.bang(req[0])
+            result,next_enent = self.bang(req[0])
             message = [
                 await Image.fromRemote(result[0]),
                 Plain(result[1])
             ]
+            if next_enent:
+                message.append(Plain("\n下一个活动(未开始):\n"))
+                message.append(await Image.fromRemote(result[2]))
+                message.append(Plain(result[3]))
             yield message
