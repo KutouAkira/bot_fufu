@@ -2,7 +2,7 @@ import typing as T
 import requests
 import json5
 from mirai import *
-from controllers import AntiEro, Help, Translate, hhsh, bangumi, bang, SauceNAO, cars, birthday
+from controllers import AntiEro, Help, Translate, hhsh, bangumi, bang, SauceNAO, cars, birthday, ISML
 from controllers.reactor import reactor, plain_str, search_groups
 
 # 初始化
@@ -71,7 +71,8 @@ controllers = {
     "bang": bang(settings["controllers"]["bang"]),
     "SauceNAO": SauceNAO(settings["controllers"]["SauceNAO"]),
     "cars": cars(settings["controllers"]["cars"]),
-    "birthday": birthday(settings["controllers"]["birthday"])
+    "birthday": birthday(settings["controllers"]["birthday"]),
+    "ISML": ISML(settings["controllers"]["ISML"])
 }
 
 recall_list = []

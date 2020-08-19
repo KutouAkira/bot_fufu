@@ -47,6 +47,8 @@ class bang(reactor):
                 if event['endAt'][serverId] != None and (eventId == None or int(event['endAt'][serverId]) > end):
                     eventId = int(i)
                     end = int(event['endAt'][serverId])
+            if len(events) == eventId:
+                return eventId, None
             return eventId, eventId+1 if events[str(eventId+1)] else None
         return None, None
 
@@ -55,6 +57,7 @@ class bang(reactor):
         banDR = None
         res = []
         server = dict(zip(['jp', 'en', 'tw', 'cn', 'kr'], [0, 1, 2, 3, 4]))
+        next_event = None
         try:
             # 获取活动id
             # if self.proxy:
@@ -123,8 +126,7 @@ class bang(reactor):
                 res.append(next_restr)
 
         except Exception as e:
-            res.append('https://http.cat/500')
-            res.append(str(e))
+            print(e)
 
         finally:
             if bestDR:

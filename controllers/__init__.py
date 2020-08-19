@@ -7,6 +7,7 @@ from .bang import bang
 from .SauceNAO import SauceNAO
 from .cars import cars
 from .birthday import birthday
+from .ISML import ISML
 
 __all__ = (
     "AntiEro",
@@ -17,5 +18,6 @@ __all__ = (
     "bang",
     "SauceNAO",
     "cars",
-    "birthday"
+    "birthday",
+    "ISML"
 )

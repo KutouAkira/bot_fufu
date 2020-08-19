@@ -4,6 +4,7 @@ from controllers.reactor import reactor, plain_str
 
 
 help = '''命令列表：
+ - 打仗(查看世萌赛事)
  - 好好说话 +句子(翻译缩写)
  - 搜图+图片(SauceNAO搜索)
  - 二刺螈生日(今天是哪些角色的生日)

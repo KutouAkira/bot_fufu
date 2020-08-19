@@ -134,6 +134,13 @@
       "trigger": [
         "二刺螈生日"
       ]
+    },
+    "ISML": {
+      "group": null,
+      "friend": null,
+      "trigger": [
+        "打仗"
+      ]
     }
   }
 }
