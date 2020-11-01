@@ -3,37 +3,36 @@ import requests
 import json
 import time
 import typing as T
-from mirai import *
-from controllers.reactor import reactor, plain_str, search_groups
+
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application.message.elements.internal import Plain
+from loguru import logger
+from utils import match_groups
+
+from .sender_filter_query_handler import SenderFilterQueryHandler
 
 url = 'https://bangumi.bilibili.com/web_api/timeline_global'
 youbi_map = {'前天的': 4, '昨天的': 5, '今天的': 6, '明天的': 7, '后天的': 8}
 
 
-class bangumi(reactor):
-    def __check__(self, user: T.Union[Group, Friend], message: MessageChain, member: Member):
-        msg = plain_str(message)
-
-        if isinstance(user, Group):
-            if self.group is not None and user.id not in self.group or member.id in self.ban:
+class Bangumi(SenderFilterQueryHandler):
+    def __find_youbi(self, message: MessageChain):
+        content = message.asDisplay()
+        for x in self.trigger:
+            result = match_groups(x, ['$day'], content)
+            if result is None:
+                continue
+            if result['$day'] is None:
                 return False
-        elif isinstance(user, Friend):
-            if self.friend is not None and user.id not in self.friend:
-                return False
-
-        for key in self.trigger:
-            day = search_groups(key, ["$day"], msg)
-            if day is None:
-                return False
-            elif str(day) == "['']":
+            elif str(result['$day']) == '':
                 return 6
-            elif day[0] not in youbi_map:
-                return  False
+            elif result['$day'] not in youbi_map:
+                return False
             else:
-                return youbi_map[day[0]]
+                return youbi_map[result['$day']]
         return False
 
-    def get_bangumi(self, youbi: int):
+    def __get_bangumi(self, youbi: int):
         json_res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                                                             'AppleWebKit/537.36 (KHTML, like Gecko) '
                                                             'Chrome/81.0.4044.122 Safari/537.36'}).text
@@ -61,9 +60,11 @@ class bangumi(reactor):
             ret += '\n\n' + '、'.join(delay) + '本周停更'
         return ret
 
-    async def generate_reply(self, bot: Mirai, source: Source, user: T.Union[Group, Friend], message: MessageChain,
-                             member: Member):
-        day = self.__check__(user, message, member)
+    async def generate_reply(self, app: GraiaMiraiApplication,
+                             subject: T.Union[Group, Friend],
+                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+        day = self.__find_youbi(message)
         if day:
-            message = [Plain(self.get_bangumi(day))]
-            yield message
+            msg = MessageChain.create([Plain(self.__get_bangumi(day))])
+            logger.info(f"Find bangumi: {day}")
+            yield msg

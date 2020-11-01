@@ -12,29 +12,25 @@ import json
 import os
 import typing as T
 
-from mirai import *
-from controllers.reactor import reactor, plain_str, search_groups
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application.message.elements.internal import Plain, Image_LocalFile
+from loguru import logger
+from utils import match_groups
 
-np.seterr(divide="ignore", invalid="ignore")
+from .sender_filter_query_handler import SenderFilterQueryHandler
 
-class cars(reactor):
-    def __check__(self, user: T.Union[Group, Friend], message: MessageChain):
-        msg = plain_str(message)
 
-        if isinstance(user, Group):
-            if self.group is not None and user.id not in self.group:
-                return False
-        elif isinstance(user, Friend):
-            if self.friend is not None and user.id not in self.friend:
-                return False
-
-        if msg == self.normal_trigger or msg == self.r18_trigger:
-            return msg, None
-        if msg[:2] == self.normal_trigger or msg[:2] == self.r18_trigger:
-            for key in self.trigger:
-                mod = search_groups(key, ["$mod"], msg)
-                if str(mod) == "['"+self.gray_trigger+"']" or str(mod) == "['"+self.color_trigger+"']":
-                    return msg[:2], mod[0]
+class Cars(SenderFilterQueryHandler):
+    def __check__(self, message: MessageChain):
+        content = message.asDisplay()
+        if content == self.normal_trigger or content == self.r18_trigger:
+            return content, None
+        if content[:2] == self.normal_trigger or content[:2] == self.r18_trigger:
+            for x in self.trigger:
+                result = match_groups(x, ['$mode'], content)
+                if result is None:
+                    continue
+                return content[:2], result['$mode']
         return False
 
     def fileListFunc(self, filePath):
@@ -62,7 +58,7 @@ class cars(reactor):
             if kind == 'R18':
                 url += '&r18=1'
             url += '&size1200=1'
-            # print(url)
+            logger.info(f"Lolicon request: {url}")
             res = requests.get(url).text
             choice = json.loads(res)['data'][0]
         elif src == 'yml':
@@ -80,7 +76,7 @@ class cars(reactor):
                 choice = random.choice(r18_list)
 
         if src == 'local':
-            print(choice)
+            logger.info(f"From local: {choice}")
             if self.is_resize:
                 img = self.resize(PImage.open(choice))  # resize 可选
             else:
@@ -91,7 +87,7 @@ class cars(reactor):
                 url = choice['url']
             else:
                 url = choice['cover']
-            print(url)
+            logger.info(f"From remote: {url}")
             if self.proxy:
                 data.write(requests.get(url, proxies=self.proxy_dict).content)
             else:
@@ -104,7 +100,6 @@ class cars(reactor):
             res = [str(file_name)]
         elif return_mode == 'Image':
             res = [img]
-            print(res)
 
         if src != 'local':
             res.append(choice['author'])
@@ -147,17 +142,17 @@ class cars(reactor):
             wlight: float = 1.0,
             blight: float = 0.5,
             chess: bool = False,
-    ) -> PImage.Image:
+    ) -> str:
         """
         发黑白车
-        :param wimgp: 白色背景下的图片路径
-        :param bimgp: 黑色背景下的图片路径
+        :param wimg: 白色背景下的图片路径
+        :param bimg: 黑色背景下的图片路径
         :param wlight: wimg 的亮度
         :param blight: bimg 的亮度
         :param chess: 是否棋盘格化
         :return: 处理后的图像
         """
-        wimg = PImage.open(self.cover_path)
+        wimg = PImage.open(self.cover)
         wimg, bimg = self.unisize_image(wimg, bimg, "L")
         wpix = np.array(wimg).astype("float64")
         bpix = np.array(bimg).astype("float64")
@@ -191,7 +186,7 @@ class cars(reactor):
             wcolor: float = 0.5,
             bcolor: float = 0.7,
             chess: bool = False,
-    ) -> PImage.Image:
+    ) -> str:
         """
         发彩色车
         :param wimg: 白色背景下的图片
@@ -203,7 +198,7 @@ class cars(reactor):
         :param chess: 是否棋盘格化
         :return: 处理后的图像
         """
-        wimg = PImage.open('static/mirai2.png')
+        wimg = PImage.open(self.cover)
         wimg = ImageEnhance.Brightness(wimg).enhance(wlight)
         bimg = ImageEnhance.Brightness(bimg).enhance(blight)
         wimg, bimg = self.unisize_image(wimg, bimg, "RGB")
@@ -246,28 +241,30 @@ class cars(reactor):
         PImage.fromarray(colors.astype("uint8")).convert("RGBA").save(file_name, format='PNG')
         return file_name
 
-    async def generate_reply(self, bot: Mirai, source: Source, user: T.Union[Group, Friend], message: MessageChain, member: Member):
-        result = self.__check__(user, message)
+    async def generate_reply(self, app: GraiaMiraiApplication,
+                             subject: T.Union[Group, Friend],
+                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+        result = self.__check__(message)
         if result:
             car, mod = result
             src = self.source
             if car == self.normal_trigger:
                 kind = "normal"
-            elif car == self.r18_trigger and user.id in self.allow_r18:
+            elif car == self.r18_trigger and subject.id in self.allow_r18:
                 kind = "R18"
             else:
-                print(str(user.id)+"无权限")
+                logger.info(f"{subject.id} 无{car}权限")
                 return
             if mod is None:
                 img = self.choice_img(kind, "info", src)
 
                 if src == "local":
-                    message = [Image.fromFileSystem(img[0])]
+                    msg = MessageChain.create([Image_LocalFile(img[0])])
                 else:
-                    message = [
-                        Image.fromFileSystem(img[0]),
+                    msg = MessageChain.create([
+                        Image_LocalFile(img[0]),
                         Plain('\n作者: ' + img[1] + '(' + str(img[2]) + ')' + '\n' + img[3])
-                    ]
+                    ])
             else:
                 choice = self.choice_img(kind, "Image", src)
                 if mod == self.gray_trigger:
@@ -276,10 +273,10 @@ class cars(reactor):
                     img = self.color_car(choice[0])
 
                 if src == "local":
-                    message = [Image.fromFileSystem(img)]
+                    msg = MessageChain.create([Image_LocalFile(img)])
                 else:
-                    message = [
-                        Image.fromFileSystem(img),
-                        Plain('\n作者: ' + choice[1] + '(' + str(choice[2]) + ')' + '\n链接: ' + choice[3])
-                    ]
-            yield message
+                    msg = MessageChain.create([
+                        Image_LocalFile(img),
+                        Plain('\n作者: ' + choice[1] + '(' + str(choice[2]) + ')' + '\n' + choice[3])
+                    ])
+            yield msg

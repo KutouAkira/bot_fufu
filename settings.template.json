@@ -1,0 +1,139 @@
+{
+  // 这部分是与 MiraiAPIHTTP 通信的参数
+  "mirai": {
+    "qq": 123456,
+    "host": "localhost",
+    "auth_key": "auth_key",
+    "port": 8080,
+    "enable_websocket": false
+  },
+  // 这部分是功能的配置
+  "AntiEro": {
+    "enable": true, // 是否开启本功能
+    "group": null, // 若为null则监听所有群组，否则应为包含欲监听群组id的一个列表
+    "friend": [], // 若为null则监听所有好友，否则应为包含欲监听好友id的一个列表
+    "admin": 123456789,
+    "APP_ID": "your_baidu_aip_APP_ID",
+    "API_KEY": "your_baidu_aip_API_KEY",
+    "SECRET_KEY": "your_baidu_aip_SECRET_KEY"
+  },
+  "bang_dream": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    // 以下三项为 **http** 代理设置，请注意与其他代理设置不同
+    "proxy": false,
+    "proxy_server": "127.0.0.1",
+    "proxy_port": 1081,
+    "trigger": [ // trigger一般为触发关键词，$后的部分为参数，更改触发词时请保留，如触发词中含空格也请保留
+      "$server邦",
+      "邦 $server"
+    ]
+  },
+  "bangumi": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    "ban": [], // 此处ban内的群员无法使用bangumi，原为开发时防其他bot误触
+    "trigger": [
+      "看$day番"
+    ]
+  },
+  "birthday": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    "trigger": [
+      "二次元生日"
+    ]
+  },
+  "cars": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    // 以下这项为允许使用r18图片的 **群组** 以及 **私聊的好友**
+    "allow_r18": [],
+    // 以下两项为代理设置，注意与BangDream的代理设置不同
+    "proxy": false,
+    "proxy_dict": {
+      "http": "http://127.0.0.1:1081/",
+      "https": "http://127.0.0.1:1081/"
+    },
+    "source": "yml", // source: yml | local | lolicon 图源，请注意：使用local时请尽量确保文件夹内只含jpg, png, bmp, gif格式的图片，并且使用local无法返回作者等详细信息
+    // 以下四项为图源的相关设置, 请务必确保所填位置存在
+    "yml_path": "static/Template.yml",
+    "local_dir": "static/normal/",
+    "local_r18_dir": "static/R18/",
+    // https://api.lolicon.app/
+    "lolicon_apikey": "your_lolicon_apikey",
+    // 以下这项为是否对local的图片进行压缩
+    "is_resize": true,
+    // 以下这项为构造幻影坦克时，里图压缩最长边的大小，最好为表图最短边的大小
+    "max_length": 1139,
+    //以下这项为构造幻影坦克的表图
+    "cover": "static/mirai.png",
+    "trigger": [
+      "开车$mod",
+      "爆破$mod"
+    ],
+    // normal_trigger与r18_trigger必须在trigger中
+    "normal_trigger": "开车",
+    "r18_trigger": "爆破",
+    "gray_trigger": "G",
+    "color_trigger": "C"
+  },
+  "help": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    "trigger": [
+      "help",
+      "帮助"
+    ]
+  },
+  "hhsh": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    "trigger": [
+      "好好说话 $obj"
+    ]
+  },
+  "isml": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    "trigger": [
+      "打仗"
+    ]
+  },
+  "SauceNAO": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    "api_key": "your_SauceNAO_api_key",
+    "EnableRename": false,
+    "minsim": "25!", // 最小匹配相似度，小于这个值搜图返回无结果，注意保留感叹号
+    "thumbSize": [250,250],
+    // 以下两项为代理设置，注意与BangDream的代理设置不同
+    "proxy": false,
+    "proxy_dict": {
+      "http": "http://127.0.0.1:1081/",
+      "https": "http://127.0.0.1:1081/"
+    },
+    "processResults": true,
+    "trigger": [
+      "搜图"
+    ]
+  },
+  "translate": {
+    "enable": true,
+    "group": null,
+    "friend": null,
+    "appid": "baidu_translate_appid",
+    "secretKey": "baidu_translate_secretKey",
+    "trigger": [
+      "翻译 $from_lang $to_lang $obj"
+    ]
+  }
+}

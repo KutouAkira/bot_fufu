@@ -1,31 +1,31 @@
 # https://www.internationalsaimoe.com/
-import typing as T
-from mirai import *
-from controllers.reactor import reactor, plain_str, search_groups
 import requests
 from bs4 import BeautifulSoup
 import time
 import datetime
 import re
+import typing as T
 
-class ISML(reactor):
-    def __check__(self, user: T.Union[Group, Friend], message: MessageChain):
-        msg = plain_str(message)
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application.message.elements.internal import Plain
+from graia.broadcast import ExecutionStop
+from loguru import logger
 
-        if isinstance(user, Group):
-            if self.group is not None and user.id not in self.group:
-                return False
-        elif isinstance(user, Friend):
-            if self.friend is not None and user.id not in self.friend:
-                return False
+from .sender_filter_query_handler import SenderFilterQueryHandler
 
-        for key in self.trigger:
-            result = search_groups(key, ["$obj"], msg)
-            if result:
-                return result
-        return False
 
-    def ISML(self):
+class ISML(SenderFilterQueryHandler):
+    def judge(self, app: GraiaMiraiApplication,
+              subject: T.Union[Group, Friend],
+              message: MessageChain):
+        super().judge(app, subject, message)
+        content = message.asDisplay()
+        for x in self.trigger:
+            if x in content:
+                return
+        raise ExecutionStop()
+
+    def __isml(self):
         class moeEvevt:
             eventTime = 0
             eventName = ""
@@ -60,12 +60,18 @@ class ISML(reactor):
 
         for event in events:
             msg += event.eventName+"\n"
-            if event.eventTime - 24*60*60 < int(time.time()):
+            if event.eventTime - 24*60*60 < int(time.time()) and len(res_now) > 0:
                 leftTime = event.eventTime - int(time.time())
                 m, s = divmod(leftTime, 60)
                 h, m = divmod(m, 60)
                 d, h = divmod(h, 24)
                 msg += '还有: %d天%02d小时%02d分%02d秒结束' % (d, h, m, s)
+            elif event.eventTime - 24*60*60 < int(time.time()):
+                leftTime = event.eventTime - int(time.time())
+                m, s = divmod(leftTime, 60)
+                h, m = divmod(m, 60)
+                d, h = divmod(h, 24)
+                msg += '还有: %d天%02d小时%02d分%02d秒开始' % (d, h, m, s)
             else:
                 msg += "开始于: " + str(datetime.datetime.fromtimestamp(event.eventTime))
             if event is not events[-1]:
@@ -73,7 +79,10 @@ class ISML(reactor):
 
         return msg
 
-    async def generate_reply(self, bot: Mirai, source: Source, user: T.Union[Group, Friend], message: MessageChain, member: Member):
-        if self.__check__(user, message):
-            message = [Plain(self.ISML())]
-            yield message
+    async def generate_reply(self, app: GraiaMiraiApplication,
+                             subject: T.Union[Group, Friend],
+                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+
+        msg = MessageChain.create([Plain(self.__isml())])
+        logger.info("Send ISML info")
+        yield msg

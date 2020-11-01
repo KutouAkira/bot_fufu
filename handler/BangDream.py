@@ -6,26 +6,23 @@ import json
 import time
 import datetime
 import typing as T
-from mirai import *
-from controllers.reactor import reactor, plain_str, search_groups
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application.message.elements.internal import Plain, Image_NetworkAddress
+from utils import match_groups
+from loguru import logger
+
+from .sender_filter_query_handler import SenderFilterQueryHandler
 
 
-class bang(reactor):
-    def __check__(self, user: T.Union[Group, Friend], message: MessageChain):
-        msg = plain_str(message)
-
-        if isinstance(user, Group):
-            if self.group is not None and user.id not in self.group:
-                return False
-        elif isinstance(user, Friend):
-            if self.friend is not None and user.id not in self.friend:
-                return False
-
-        for key in self.trigger:
-            result = search_groups(key, ["$server"], msg)
-            if result:
-                return result
-        return False
+class BangDream(SenderFilterQueryHandler):
+    def __find_server(self, message: MessageChain) -> T.Optional[str]:
+        content = message.asDisplay()
+        for x in self.trigger:
+            result = match_groups(x, ['$server'], content)
+            if result is None:
+                continue
+            return result['$server']
+        return None
 
     def getEventId(self, events, serverId):
         if events:
@@ -48,14 +45,22 @@ class bang(reactor):
                     eventId = int(i)
                     end = int(event['endAt'][serverId])
             if len(events) == eventId:
+                logger.info(f"EventId is {eventId}, no next event.")
                 return eventId, None
+            logger.info(f"EventId is {eventId}, may no next event.")
             return eventId, eventId+1 if events[str(eventId+1)] else None
+        logger.info("No events.")
         return None, None
 
     def bang(self, q):
         bestDR = None
         banDR = None
         res = []
+        chinese_dict = dict(zip(['日', '英', '台', '国', '韩'], ['jp', 'en', 'tw', 'cn', 'kr']))
+        if not q.islower() and not q.isupper():
+            q = chinese_dict[q]
+        if q.isupper():
+            q = q.lower()
         server = dict(zip(['jp', 'en', 'tw', 'cn', 'kr'], [0, 1, 2, 3, 4]))
         next_event = None
         try:
@@ -108,6 +113,7 @@ class bang(reactor):
                 restr += '\n剩余: %d天%02d小时%02d分%02d秒' % (d, h, m, s)
             else:
                 left = int((now - end_time).total_seconds())
+
                 m, s = divmod(left, 60)
                 h, m = divmod(m, 60)
                 d, h = divmod(h, 24)
@@ -135,17 +141,21 @@ class bang(reactor):
             #     banDR.close()
         return res, next_event
 
-    async def generate_reply(self, bot: Mirai, source: Source, user: T.Union[Group, Friend], message: MessageChain,
-                             member: Member):
-        req = self.__check__(user, message)
+    async def generate_reply(self, app: GraiaMiraiApplication,
+                             subject: T.Union[Group, Friend],
+                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+
+        req = self.__find_server(message)
         if req:
-            result,next_enent = self.bang(req[0])
-            message = [
-                await Image.fromRemote(result[0]),
+            result, next_event = self.bang(req)
+            msg = MessageChain.create([
+                Image_NetworkAddress(result[0]),
                 Plain(result[1])
-            ]
-            if next_enent:
-                message.append(Plain("\n下一个活动(未开始):\n"))
-                message.append(await Image.fromRemote(result[2]))
-                message.append(Plain(result[3]))
-            yield message
+            ])
+            if next_event:
+                msg.join(MessageChain.create([
+                    Plain("\n下一个活动(未开始):\n"),
+                    Image_NetworkAddress(result[2]),
+                    Plain(result[3])
+                ]))
+            yield msg

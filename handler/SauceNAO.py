@@ -5,27 +5,27 @@ import io
 import requests
 from PIL import Image as PIL_Image
 import typing as T
-from mirai import *
-from controllers.reactor import reactor, plain_str
+
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application.message.elements.internal import Plain, Image
+from graia.broadcast import ExecutionStop
+from loguru import logger
+
+from .sender_filter_query_handler import SenderFilterQueryHandler
 
 
-class SauceNAO(reactor):
-    def __check__(self, user: T.Union[Group, Friend], message: MessageChain):
-        msg = plain_str(message)
-
-        if not message.getFirstComponent(Image):
-            return False
-        elif isinstance(user, Group):
-            if self.group is not None and user.id not in self.group:
-                return False
-        elif isinstance(user, Friend):
-            if self.friend is not None and user.id not in self.friend:
-                return False
-
-        for key in self.trigger:
-            if msg.find(key) != -1:
-                return True
-        return False
+class SauceNAO(SenderFilterQueryHandler):
+    def judge(self, app: GraiaMiraiApplication,
+              subject: T.Union[Group, Friend],
+              message: MessageChain):
+        super().judge(app, subject, message)
+        if not message.get(Image):
+            raise ExecutionStop()
+        content = message.asDisplay()
+        for x in self.trigger:
+            if x in content:
+                return
+        raise ExecutionStop()
 
     def SauceNAO(self, imgurl):
         img = io.BytesIO()
@@ -53,7 +53,7 @@ class SauceNAO(reactor):
             else:
                 results = json.loads(r.text)
                 if int(results['header']['user_id']) > 0:
-                    print('Remaining Searches 30s|24h: ' + str(results['header']['short_remaining']) + '|' + str(
+                    logger.info('Remaining Searches 30s|24h: ' + str(results['header']['short_remaining']) + '|' + str(
                         results['header']['long_remaining']))
                     break
                     '''
@@ -72,7 +72,7 @@ class SauceNAO(reactor):
         urls = []
         if self.processResults:
             if int(results['header']['results_returned']) > 0:
-                print(results)
+                logger.info(results)
                 for result in results['results']:
                     res = '\n相似度: ' + result['header']['similarity']
                     for key in result['data']:
@@ -94,10 +94,12 @@ class SauceNAO(reactor):
                 res += '\nOut of searches for this 30 second period.'
             return res
 
-    async def generate_reply(self, bot: Mirai, source: Source, user: T.Union[Group, Friend], message: MessageChain,
-                             member: Member):
-        if self.__check__(user, message):
-            image = message.getFirstComponent(Image)
-            result = self.SauceNAO(str(image).split("'")[5])
-            message = [Plain(result)]
-            yield message
+    async def generate_reply(self, app: GraiaMiraiApplication,
+                             subject: T.Union[Group, Friend],
+                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+
+        image = message.get(Image)
+        for img in image:
+            result = self.SauceNAO(img.url)
+            msg = MessageChain.create([Plain(result)])
+            yield msg

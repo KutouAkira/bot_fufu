@@ -1,8 +1,10 @@
-kuriyama
+graia-application-mirai
+graia-template
+loguru
 json5
 pillow
 baidu-aip
 numpy
 pyyaml
-tensorflow-gpu
+tensorflow
 scikit-image

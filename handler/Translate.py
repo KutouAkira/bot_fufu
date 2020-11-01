@@ -7,26 +7,24 @@ import json
 import http.client
 import ctypes
 import typing as T
-from mirai import *
-from controllers.reactor import reactor, plain_str, search_groups
+
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application.message.elements.internal import Plain
+from loguru import logger
+from utils import match_groups
+
+from .sender_filter_query_handler import SenderFilterQueryHandler
 
 
-class Translate(reactor):
-    def __check__(self, user: T.Union[Group, Friend], message: MessageChain):
-        msg = plain_str(message)
-
-        if isinstance(user, Group):
-            if self.group is not None and user.id not in self.group:
-                return False
-        elif isinstance(user, Friend):
-            if self.friend is not None and user.id not in self.friend:
-                return False
-
-        for key in self.trigger:
-            result = search_groups(key, ["$from_lang", "$to_lang", "$obj"], msg)
-            if result is not None:
-                return result
-        return False
+class Translate(SenderFilterQueryHandler):
+    def __find_obj(self, message: MessageChain) -> T.Optional[dict]:
+        content = message.asDisplay()
+        for x in self.trigger:
+            result = match_groups(x, ["$from_lang", "$to_lang", "$obj"], content)
+            if result is None:
+                continue
+            return result
+        return None
 
     # 百度翻译
     def BDtranslate(self, fromLang, toLang, q):
@@ -74,11 +72,9 @@ class Translate(reactor):
         a = src.strip()
         b = 406644
         b1 = 3293161072
-
         jd = "."
         美元b = "+-a^+6"
         Zb = "+-3^+b+-f"
-
         e = []
         for g in range(len(a)):
             m = ord(a[g])
@@ -129,7 +125,6 @@ class Translate(reactor):
             else:
                 a = int(a) ^ d
         return a
-
     # ----------------------------------------------
 
     # Google翻译
@@ -163,7 +158,6 @@ class Translate(reactor):
         finally:
             if trans:
                 trans.close()
-
         # 平假名、片假名、罗马音互转实验性功能
         # if fromLang == 'ja-Latn':
         #     if toLang == 'ja-Hrgn':
@@ -188,30 +182,30 @@ class Translate(reactor):
         #                 trans.close()
         #         if toLang == 'ja':
         #             return result[7][1]
-        #
-        # 启用旧的功能提供罗马音和平假名
         if toLang == 'ja-Latn' or toLang == 'ja-Hrgn':
             return str(result)
         else:
             return result[0][0][0]
+            
+    google_dict = {"auto": "auto", "zh": "zh-CN", "jp": "ja", "en": "en"}
 
-    google_dict = {"zh": "zh-CN", "jp": "ja", "en": "en"}
+    async def generate_reply(self, app: GraiaMiraiApplication,
+                             subject: T.Union[Group, Friend],
+                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
 
-    async def generate_reply(self, bot: Mirai, source: Source, user: T.Union[Group, Friend], message: MessageChain,
-                             member: Member):
-        result = self.__check__(user, message)
+        result = self.__find_obj(message)
         if result:
-            fromLang, toLang, q = result
-            # 启用旧的功能提供罗马音和平假名
+            fromLang, toLang, q = result['$from_lang'], result['$to_lang'], result['$obj']
+            logger.info(f"Translate from {fromLang} to {toLang}.")
             if ('ja-Latn' == fromLang or 'ja-Hrgn' == fromLang)\
                     or ('ja-Latn' == toLang or 'ja-Hrgn' == toLang):
                 google_res = self.googleTrans(fromLang, toLang, q)
-                message = [Plain(google_res)]
+                msg = MessageChain.create([Plain(google_res)])
             else:
                 baidu_res = self.BDtranslate(fromLang, toLang, q)
                 google_res = self.googleTrans(self.google_dict[fromLang], self.google_dict[toLang], q)
-                message = [
+                msg = MessageChain.create([
                     Plain("度娘: " + baidu_res + "\n"),
                     Plain("谷歌: " + google_res)
-                ]
-            yield message
+                ])
+            yield msg
