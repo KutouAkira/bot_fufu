@@ -20,7 +20,7 @@ A personal QQ bot based on Mirai
 
 [project-mirai/mirai-api-http](https://github.com/project-mirai/mirai-api-http)
 
-[NatriumLab/python-mirai](https://github.com/NatriumLab/python-mirai)
+[GraiaProject/Application](https://github.com/GraiaProject/Application)
 
 [yahoo/open_nsfw](https://github.com/yahoo/open_nsfw)
 
