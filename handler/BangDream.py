@@ -153,7 +153,7 @@ class BangDream(SenderFilterQueryHandler):
                 Plain(result[1])
             ])
             if next_event:
-                msg.join(MessageChain.create([
+                msg = MessageChain.join(msg, MessageChain.create([
                     Plain("\n下一个活动(未开始):\n"),
                     Image_NetworkAddress(result[2]),
                     Plain(result[3])
