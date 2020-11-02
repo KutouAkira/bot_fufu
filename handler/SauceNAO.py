@@ -99,7 +99,8 @@ class SauceNAO(SenderFilterQueryHandler):
                              message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
 
         image = message.get(Image)
+        msg = MessageChain.create([])
         for img in image:
             result = self.SauceNAO(img.url)
-            msg = MessageChain.create([Plain(result)])
-            yield msg
+            msg = MessageChain.join(msg, MessageChain.create([Plain(result)]))
+        yield msg
