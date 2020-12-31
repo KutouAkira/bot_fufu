@@ -38,7 +38,7 @@ async def reply(app: GraiaMiraiApplication,
         await __reply_queue.do(partial(app.sendGroupMessage, group=subject, message=message, quote=quote))
         if message.get(Image_LocalFile):
             path = str(message.get(Image_LocalFile)[0].filepath)
-            if 'tmp\\' in path:
+            if 'tmp\\' in path or 'tmp/' in path:
                 os.remove(path)
     elif isinstance(subject, Friend):
         await __reply_queue.do(partial(app.sendFriendMessage, target=subject, message=message, quote=quote))

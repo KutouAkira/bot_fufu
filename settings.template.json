@@ -67,7 +67,8 @@
       "https": "http://127.0.0.1:1081/"
     },
     "source": "yml", // source: yml | local | lolicon 图源，请注意：使用local时请尽量确保文件夹内只含jpg, png, bmp, gif格式的图片，并且使用local无法返回作者等详细信息
-    // 以下四项为图源的相关设置, 请务必确保所填位置存在
+    "r18_rotate": true, // 是否旋转r18画作减少被和谐的几率
+    // 以下四项为图源的相关设置, 请务必确保所填位置存在，如不使用yml/local可以留空相应的路径
     "yml_path": "static/Template.yml",
     "local_dir": "static/normal/",
     "local_r18_dir": "static/R18/",

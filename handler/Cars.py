@@ -47,7 +47,8 @@ class Cars(AbstractMessageHandler):
             self,
             kind: str,
             return_mode: str,
-            src: str
+            src: str,
+            r18_rotate: bool
     ):
         '''
         图片种类 kind: normal | R18;
@@ -82,6 +83,7 @@ class Cars(AbstractMessageHandler):
                 img = self.resize(PImage.open(choice))  # resize 可选
             else:
                 img = PImage.open(choice)
+
         else:
             data = io.BytesIO()
             if src == 'lolicon':
@@ -94,6 +96,9 @@ class Cars(AbstractMessageHandler):
             else:
                 data.write(requests.get(url).content)
             img = PImage.open(data)
+
+        if kind == 'R18' and r18_rotate:
+            img = img.rotate(180)
 
         if return_mode == 'info':
             file_name = 'tmp/' + ''.join(random.sample(string.ascii_letters + string.digits, 8)) + '.png'
@@ -251,6 +256,7 @@ class Cars(AbstractMessageHandler):
         if result:
             car, mod = result
             src = self.source
+            r18_rotate = self.r18_rotate
             if car == self.normal_trigger:
                 kind = "normal"
             elif car == self.r18_trigger and subject.id in self.allow_r18:
@@ -259,7 +265,7 @@ class Cars(AbstractMessageHandler):
                 logger.info(f"{subject.id} 无{car}权限")
                 return
             if mod is None:
-                img = self.choice_img(kind, "info", src)
+                img = self.choice_img(kind, "info", src, r18_rotate)
 
                 if src == "local":
                     msg = MessageChain.create([Image_LocalFile(img[0])])
@@ -269,7 +275,7 @@ class Cars(AbstractMessageHandler):
                         Plain('\n作者: ' + img[1] + '(' + str(img[2]) + ')' + '\n' + img[3])
                     ])
             else:
-                choice = self.choice_img(kind, "Image", src)
+                choice = self.choice_img(kind, "Image", src, r18_rotate)
                 if mod == self.gray_trigger:
                     img = self.gray_car(choice[0])
                 elif mod == self.color_trigger:
