@@ -1,6 +1,7 @@
 # https://bandori.ga
 # https://bestdori.com
 # API来自互联网
+import asyncio
 import http.client
 import json
 import time
@@ -11,10 +12,10 @@ from graia.application.message.elements.internal import Plain, Image_NetworkAddr
 from utils import match_groups
 from loguru import logger
 
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
 
-class BangDream(SenderFilterQueryHandler):
+class BangDream(AbstractMessageHandler):
     def __find_server(self, message: MessageChain) -> T.Optional[str]:
         content = message.asDisplay()
         for x in self.trigger:
@@ -141,9 +142,10 @@ class BangDream(SenderFilterQueryHandler):
             #     banDR.close()
         return res, next_event
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
 
         req = self.__find_server(message)
         if req:
@@ -158,4 +160,6 @@ class BangDream(SenderFilterQueryHandler):
                     Image_NetworkAddress(result[2]),
                     Plain(result[3])
                 ]))
-            yield msg
+            await channel.put(msg)
+            return True
+        return False

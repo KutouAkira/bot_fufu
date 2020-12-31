@@ -1,4 +1,5 @@
 # https://www.internationalsaimoe.com/
+import asyncio
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -7,24 +8,12 @@ import re
 import typing as T
 
 from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
-from graia.application.message.elements.internal import Plain
-from graia.broadcast import ExecutionStop
 from loguru import logger
 
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
 
-class ISML(SenderFilterQueryHandler):
-    def judge(self, app: GraiaMiraiApplication,
-              subject: T.Union[Group, Friend],
-              message: MessageChain):
-        super().judge(app, subject, message)
-        content = message.asDisplay()
-        for x in self.trigger:
-            if x in content:
-                return
-        raise ExecutionStop()
-
+class ISML(AbstractMessageHandler):
     def __isml(self):
         class moeEvevt:
             eventTime = 0
@@ -37,7 +26,8 @@ class ISML(SenderFilterQueryHandler):
         soup = BeautifulSoup(result, 'html.parser')
         res_now = soup.find_all('h2', class_='currentEvent center-text')
         res_future = soup.find_all('h4', class_='upcomingEvent')
-        regex = r"(Nominations|Aquamarine|Topaz|Amethyst|Sapphire|Emerald|Ruby|Diamond|Elimination) [1-9]"
+        regex = r"(Nominations|Aquamarine|Topaz|Amethyst|Sapphire|Emerald|Ruby|Diamond|Elimination) " \
+                r"([1-9]|\(spring\)|\(summer\)|\(autumn\)|\(winter\))"
         events = []
         if len(res_now) > 0:
             for event in res_now:
@@ -46,7 +36,8 @@ class ISML(SenderFilterQueryHandler):
                 moe.eventName = re.search(regex, event.text).group().replace("Nominations", "海选").\
                     replace("Aquamarine","海蓝宝石").replace("Topaz", "黄玉").replace("Amethyst", "紫水晶").\
                     replace("Sapphire", "蓝宝石").replace("Emerald","翡翠").replace("Ruby","红宝石").\
-                    replace("Diamond", "钻石").replace("Elimination", "淘汰赛")
+                    replace("Diamond", "钻石").replace("Elimination", "淘汰赛").replace("spring", "春季").\
+                    replace("summer", "夏季").replace("autumn", "秋季").replace("winter", "冬季")
                 events.append(moe)
 
         for event in res_future:
@@ -55,7 +46,8 @@ class ISML(SenderFilterQueryHandler):
             moe.eventName = re.search(regex, event.text).group().replace("Nominations", "海选").\
                     replace("Aquamarine","海蓝宝石").replace("Topaz", "黄玉").replace("Amethyst", "紫水晶").\
                     replace("Sapphire", "蓝宝石").replace("Emerald","翡翠").replace("Ruby","红宝石").\
-                    replace("Diamond", "钻石").replace("Elimination", "淘汰赛")
+                    replace("Diamond", "钻石").replace("Elimination", "淘汰赛").replace("spring", "春季").\
+                    replace("summer", "夏季").replace("autumn", "秋季").replace("winter", "冬季")
             events.append(moe)
 
         for event in events:
@@ -79,10 +71,21 @@ class ISML(SenderFilterQueryHandler):
 
         return msg
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
+        # 检测是否触发
+        accept = False
+        content = message.asDisplay()
+        for x in self.trigger:
+            if (self.trigger_mode == "match" and x == content) or (self.trigger_mode == "search" and x in content):
+                accept = True
+                break
 
-        msg = MessageChain.create([Plain(self.__isml())])
+        if not accept:
+            return False
+
+        await channel.put(self.__isml())
         logger.info("Send ISML info")
-        yield msg
+        return True

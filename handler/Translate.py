@@ -1,5 +1,6 @@
 # http://api.fanyi.baidu.com/
 # https://github.com/KutouAkira/python_Google_TK
+import asyncio
 import hashlib
 import urllib
 import random
@@ -9,14 +10,13 @@ import ctypes
 import typing as T
 
 from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
-from graia.application.message.elements.internal import Plain
 from loguru import logger
 from utils import match_groups
 
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
 
-class Translate(SenderFilterQueryHandler):
+class Translate(AbstractMessageHandler):
     def __find_obj(self, message: MessageChain) -> T.Optional[dict]:
         content = message.asDisplay()
         for x in self.trigger:
@@ -189,9 +189,10 @@ class Translate(SenderFilterQueryHandler):
             
     google_dict = {"auto": "auto", "zh": "zh-CN", "jp": "ja", "en": "en"}
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
 
         result = self.__find_obj(message)
         if result:
@@ -200,12 +201,9 @@ class Translate(SenderFilterQueryHandler):
             if ('ja-Latn' == fromLang or 'ja-Hrgn' == fromLang)\
                     or ('ja-Latn' == toLang or 'ja-Hrgn' == toLang):
                 google_res = self.googleTrans(fromLang, toLang, q)
-                msg = MessageChain.create([Plain(google_res)])
+                await channel.put(google_res)
             else:
                 baidu_res = self.BDtranslate(fromLang, toLang, q)
                 google_res = self.googleTrans(self.google_dict[fromLang], self.google_dict[toLang], q)
-                msg = MessageChain.create([
-                    Plain("度娘: " + baidu_res + "\n"),
-                    Plain("谷歌: " + google_res)
-                ])
-            yield msg
+                await channel.put("度娘: " + baidu_res + "\n谷歌: " + google_res)
+            return True

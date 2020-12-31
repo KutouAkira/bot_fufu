@@ -1,11 +1,9 @@
+import asyncio
 import typing as T
 
 from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
-from graia.application.message.elements.internal import Plain
-from graia.broadcast import ExecutionStop
 from loguru import logger
-
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
 help_str = '''命令列表：
  - 打仗(查看世萌赛事)
@@ -18,22 +16,28 @@ help_str = '''命令列表：
  - 烤肉 原语言 目标语言 句子(注意空格，中文:zh，英语:en，日文:jp)
 '''
 
+class Help(AbstractMessageHandler):
+    text: str
 
-class Help(SenderFilterQueryHandler):
-    def judge(self, app: GraiaMiraiApplication,
-              subject: T.Union[Group, Friend],
-              message: MessageChain):
-        super().judge(app, subject, message)
+    def __init__(self, tag: str, settings: dict, **kwargs):
+        super().__init__(tag, settings, **kwargs)
+        self.text = help_str
+
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
+        # 检测是否触发
+        accept = False
         content = message.asDisplay()
         for x in self.trigger:
-            if x in content:
-                return
-        raise ExecutionStop()
+            if (self.trigger_mode == "match" and x == content) or (self.trigger_mode == "search" and x in content):
+                accept = True
+                break
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+        if not accept:
+            return False
 
-        msg = MessageChain.create([Plain(help_str)])
-        yield msg
+        await channel.put(self.text)
         logger.info("Send help ok")
+        return True

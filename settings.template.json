@@ -12,6 +12,7 @@
     "enable": true, // 是否开启本功能
     "group": null, // 若为null则监听所有群组，否则应为包含欲监听群组id的一个列表
     "friend": [], // 若为null则监听所有好友，否则应为包含欲监听好友id的一个列表
+    "ban": [], // 想要禁用的群员
     "admin": 123456789,
     "APP_ID": "your_baidu_aip_APP_ID",
     "API_KEY": "your_baidu_aip_API_KEY",
@@ -21,28 +22,33 @@
     "enable": true,
     "group": null,
     "friend": null,
+    "ban": [],
     // 以下三项为 **http** 代理设置，请注意与其他代理设置不同
     "proxy": false,
     "proxy_server": "127.0.0.1",
     "proxy_port": 1081,
+    "trigger_mode": "search", // 关键词匹配模式match为全字匹配，search为部分匹配
     "trigger": [ // trigger一般为触发关键词，$后的部分为参数，更改触发词时请保留，如触发词中含空格也请保留
-      "$server邦",
-      "邦 $server"
+      "^$server邦",
+      "^邦 $server"
     ]
   },
   "bangumi": {
     "enable": true,
     "group": null,
     "friend": null,
-    "ban": [], // 此处ban内的群员无法使用bangumi，原为开发时防其他bot误触
+    "ban": [],
+    "trigger_mode": "search",
     "trigger": [
-      "看$day番"
+      "^看$day番"
     ]
   },
   "birthday": {
     "enable": true,
     "group": null,
     "friend": null,
+    "ban": [],
+    "trigger_mode": "match",
     "trigger": [
       "二次元生日"
     ]
@@ -51,6 +57,7 @@
     "enable": true,
     "group": null,
     "friend": null,
+    "ban": [],
     // 以下这项为允许使用r18图片的 **群组** 以及 **私聊的好友**
     "allow_r18": [],
     // 以下两项为代理设置，注意与BangDream的代理设置不同
@@ -72,9 +79,10 @@
     "max_length": 1139,
     //以下这项为构造幻影坦克的表图
     "cover": "static/mirai.png",
+    "trigger_mode": "search",
     "trigger": [
-      "开车$mod",
-      "爆破$mod"
+      "^开车$mod",
+      "^爆破$mod"
     ],
     // normal_trigger与r18_trigger必须在trigger中
     "normal_trigger": "开车",
@@ -86,6 +94,8 @@
     "enable": true,
     "group": null,
     "friend": null,
+    "ban": [],
+    "trigger_mode": "match",
     "trigger": [
       "help",
       "帮助"
@@ -95,14 +105,18 @@
     "enable": true,
     "group": null,
     "friend": null,
+    "ban": [],
+    "trigger_mode": "search",
     "trigger": [
-      "好好说话 $obj"
+      "^好好说话 $obj"
     ]
   },
   "isml": {
     "enable": true,
     "group": null,
     "friend": null,
+    "ban": [],
+    "trigger_mode": "match",
     "trigger": [
       "打仗"
     ]
@@ -111,6 +125,7 @@
     "enable": true,
     "group": null,
     "friend": null,
+    "ban": [],
     "api_key": "your_SauceNAO_api_key",
     "EnableRename": false,
     "minsim": "25!", // 最小匹配相似度，小于这个值搜图返回无结果，注意保留感叹号
@@ -122,6 +137,7 @@
       "https": "http://127.0.0.1:1081/"
     },
     "processResults": true,
+    "trigger_mode": "search",
     "trigger": [
       "搜图"
     ]
@@ -130,10 +146,12 @@
     "enable": true,
     "group": null,
     "friend": null,
+    "ban": [],
     "appid": "baidu_translate_appid",
     "secretKey": "baidu_translate_secretKey",
+    "trigger_mode": "search",
     "trigger": [
-      "翻译 $from_lang $to_lang $obj"
+      "^翻译 $from_lang $to_lang $obj"
     ]
   }
 }

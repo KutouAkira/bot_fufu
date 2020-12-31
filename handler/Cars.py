@@ -1,4 +1,5 @@
 # https://github.com/Aloxaf/MirageTankGo
+import asyncio
 from PIL import Image as PImage
 from PIL import ImageEnhance
 from typing import Tuple
@@ -17,10 +18,10 @@ from graia.application.message.elements.internal import Plain, Image_LocalFile
 from loguru import logger
 from utils import match_groups
 
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
 
-class Cars(SenderFilterQueryHandler):
+class Cars(AbstractMessageHandler):
     def __check__(self, message: MessageChain):
         content = message.asDisplay()
         if content == self.normal_trigger or content == self.r18_trigger:
@@ -241,9 +242,11 @@ class Cars(SenderFilterQueryHandler):
         PImage.fromarray(colors.astype("uint8")).convert("RGBA").save(file_name, format='PNG')
         return file_name
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
+
         result = self.__check__(message)
         if result:
             car, mod = result
@@ -279,4 +282,7 @@ class Cars(SenderFilterQueryHandler):
                         Image_LocalFile(img),
                         Plain('\n作者: ' + choice[1] + '(' + str(choice[2]) + ')' + '\n' + choice[3])
                     ])
-            yield msg
+            await channel.put(msg)
+            logger.info("Send car ok")
+            return True
+        return False

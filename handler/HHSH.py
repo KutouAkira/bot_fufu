@@ -1,18 +1,18 @@
 # https://lab.magiconch.com/
 # API来自互联网
+import asyncio
 import json
 import requests
 import typing as T
 
 from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
-from graia.application.message.elements.internal import Plain
 from loguru import logger
 from utils import match_groups
 
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
 
-class HHSH(SenderFilterQueryHandler):
+class HHSH(AbstractMessageHandler):
     def __find_obj(self, message: MessageChain) -> T.Optional[str]:
         content = message.asDisplay()
         for x in self.trigger:
@@ -40,12 +40,14 @@ class HHSH(SenderFilterQueryHandler):
             result = "连接超时"
         return result
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
-
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
+        # 检测是否触发
         result = self.__find_obj(message)
+
         if result:
-            msg = MessageChain.create([Plain(self.hhsh(result))])
+            await channel.put(self.hhsh(result))
             logger.info(f"Find define of {result}")
-            yield msg
+            return True

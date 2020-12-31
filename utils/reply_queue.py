@@ -1,8 +1,9 @@
 import typing as T
+import os
 from functools import partial
 
 from graia.application import MessageChain, Group, GraiaMiraiApplication, Friend, Source
-from graia.application.message.elements.internal import Plain
+from graia.application.message.elements.internal import Plain, Image_LocalFile
 
 from utils.wait_queue import WaitQueue
 
@@ -35,6 +36,10 @@ async def reply(app: GraiaMiraiApplication,
     # 因为mirai-api-http的问题，不能并发传图不然容易车祸
     if isinstance(subject, Group):
         await __reply_queue.do(partial(app.sendGroupMessage, group=subject, message=message, quote=quote))
+        if message.get(Image_LocalFile):
+            path = str(message.get(Image_LocalFile)[0].filepath)
+            if 'tmp\\' in path:
+                os.remove(path)
     elif isinstance(subject, Friend):
         await __reply_queue.do(partial(app.sendFriendMessage, target=subject, message=message, quote=quote))
     else:

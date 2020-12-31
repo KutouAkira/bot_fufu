@@ -8,3 +8,4 @@ numpy
 pyyaml
 tensorflow
 scikit-image
+sortedcontainers

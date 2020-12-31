@@ -1,28 +1,17 @@
 # 二刺螈人物生日，数据来源萌娘百科
+import asyncio
 import requests
 import time
 from bs4 import BeautifulSoup
 import typing as T
 
 from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
-from graia.application.message.elements.internal import Plain
-from graia.broadcast import ExecutionStop
 from loguru import logger
 
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
 
-class Birthday(SenderFilterQueryHandler):
-    def judge(self, app: GraiaMiraiApplication,
-              subject: T.Union[Group, Friend],
-              message: MessageChain):
-        super().judge(app, subject, message)
-        content = message.asDisplay()
-        for x in self.trigger:
-            if x in content:
-                return
-        raise ExecutionStop()
-
+class Birthday(AbstractMessageHandler):
     def __birthday(self):
         year = time.strftime("20%y", time.localtime())
         month = time.strftime("%#m", time.localtime())
@@ -36,10 +25,21 @@ class Birthday(SenderFilterQueryHandler):
             msg += '\n' + people.string
         return msg
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
+        # 检测是否触发
+        accept = False
+        content = message.asDisplay()
+        for x in self.trigger:
+            if (self.trigger_mode == "match" and x == content) or (self.trigger_mode == "search" and x in content):
+                accept = True
+                break
 
-        msg = MessageChain.create([Plain(self.__birthday())])
-        yield msg
+        if not accept:
+            return False
+
+        await channel.put(self.__birthday())
         logger.info("Send birthday info.")
+        return True

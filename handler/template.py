@@ -1,28 +1,30 @@
+import asyncio
 import typing as T
 
 from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
-from graia.application.message.elements.internal import Plain
-from graia.broadcast import ExecutionStop
 from loguru import logger
 
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
+class Template(AbstractMessageHandler):
+    def __init__(self, tag: str, settings: dict, **kwargs):
+        super().__init__(tag, settings, **kwargs)
 
-class Template(SenderFilterQueryHandler):
-    def judge(self, app: GraiaMiraiApplication,
-              subject: T.Union[Group, Friend],
-              message: MessageChain):
-        super().judge(app, subject, message)
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
+        # 检测是否触发
+        accept = False
         content = message.asDisplay()
         for x in self.trigger:
-            if x in content:
-                return
-        raise ExecutionStop()
+            if (self.trigger_mode == "match" and x == content) or (self.trigger_mode == "search" and x in content):
+                accept = True
+                break
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
+        if not accept:
+            return False
 
-        msg = MessageChain.create([])
-        yield msg
-        logger.info("")
+        await channel.put(self.text)
+        logger.info("Send ok")
+        return True

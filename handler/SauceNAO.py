@@ -1,5 +1,6 @@
 # https://saucenao.com
 # 免费注册可以用API
+import asyncio
 import json
 import io
 import requests
@@ -7,26 +8,13 @@ from PIL import Image as PIL_Image
 import typing as T
 
 from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
-from graia.application.message.elements.internal import Plain, Image
-from graia.broadcast import ExecutionStop
+from graia.application.message.elements.internal import Image
 from loguru import logger
 
-from .sender_filter_query_handler import SenderFilterQueryHandler
+from .abstract_message_handler import AbstractMessageHandler
 
 
-class SauceNAO(SenderFilterQueryHandler):
-    def judge(self, app: GraiaMiraiApplication,
-              subject: T.Union[Group, Friend],
-              message: MessageChain):
-        super().judge(app, subject, message)
-        if not message.get(Image):
-            raise ExecutionStop()
-        content = message.asDisplay()
-        for x in self.trigger:
-            if x in content:
-                return
-        raise ExecutionStop()
-
+class SauceNAO(AbstractMessageHandler):
     def SauceNAO(self, imgurl):
         img = io.BytesIO()
         if self.proxy:
@@ -94,13 +82,24 @@ class SauceNAO(SenderFilterQueryHandler):
                 res += '\nOut of searches for this 30 second period.'
             return res
 
-    async def generate_reply(self, app: GraiaMiraiApplication,
-                             subject: T.Union[Group, Friend],
-                             message: MessageChain) -> T.AsyncGenerator[T.Union[str, MessageChain], None]:
-
+    async def handle(self, app: GraiaMiraiApplication,
+                     subject: T.Union[Group, Friend],
+                     message: MessageChain,
+                     channel: asyncio.Queue) -> bool:
+        # 检测是否触发
+        accept = False
+        content = message.asDisplay()
+        for x in self.trigger:
+            if (self.trigger_mode == "match" and x == content) or (self.trigger_mode == "search" and x in content):
+                accept = True
+                break
         image = message.get(Image)
-        msg = MessageChain.create([])
+
+        if not accept or not image:
+            return False
+
+        result = ''
         for img in image:
-            result = self.SauceNAO(img.url)
-            msg = MessageChain.join(msg, MessageChain.create([Plain(result)]))
-        yield msg
+            result += self.SauceNAO(img.url)
+        await channel.put(result)
+        return True
