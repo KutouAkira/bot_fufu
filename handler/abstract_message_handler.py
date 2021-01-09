@@ -3,7 +3,7 @@ import asyncio
 import typing as T
 from abc import abstractmethod
 
-from graia.application import GraiaMiraiApplication, MessageChain, Friend, Group
+from graia.application import GraiaMiraiApplication, MessageChain, Friend, Group, Member
 
 
 class AbstractMessageHandler(metaclass=abc.ABCMeta):
@@ -21,12 +21,14 @@ class AbstractMessageHandler(metaclass=abc.ABCMeta):
     async def handle(self, app: GraiaMiraiApplication,
                      subject: T.Union[Group, Friend],
                      message: MessageChain,
+                     member: Member,
                      channel: asyncio.Queue) -> bool:
         """
         处理消息
         :param app: GraiaMiraiApplication
         :param subject: 消息发送者
         :param message: 接收到的消息
+        :param member: Group消息发送者
         :param channel: 用于发送消息的Queue
         :return: 返回值指示HandlerManager是否应继续分发该消息，即是否拦截下该消息
         """

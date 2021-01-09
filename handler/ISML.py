@@ -7,7 +7,7 @@ import datetime
 import re
 import typing as T
 
-from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend, Member
 from loguru import logger
 
 from .abstract_message_handler import AbstractMessageHandler
@@ -74,6 +74,7 @@ class ISML(AbstractMessageHandler):
     async def handle(self, app: GraiaMiraiApplication,
                      subject: T.Union[Group, Friend],
                      message: MessageChain,
+                     member: Member,
                      channel: asyncio.Queue) -> bool:
         # 检测是否触发
         accept = False

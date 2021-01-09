@@ -60,6 +60,8 @@
     "ban": [],
     // 以下这项为允许使用r18图片的 **群组** 以及 **私聊的好友**
     "allow_r18": [],
+    // 以下这项为允许使用重载的Q号
+    "admin": [],
     // 以下两项为代理设置，注意与BangDream的代理设置不同
     "proxy": false,
     "proxy_dict": {
@@ -89,7 +91,8 @@
     "normal_trigger": "开车",
     "r18_trigger": "爆破",
     "gray_trigger": "G",
-    "color_trigger": "C"
+    "color_trigger": "C",
+    "reload_trigger": "reload cars"
   },
   "help": {
     "enable": true,

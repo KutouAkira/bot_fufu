@@ -5,7 +5,7 @@ import json
 import requests
 import typing as T
 
-from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend, Member
 from loguru import logger
 from utils import match_groups
 
@@ -43,6 +43,7 @@ class HHSH(AbstractMessageHandler):
     async def handle(self, app: GraiaMiraiApplication,
                      subject: T.Union[Group, Friend],
                      message: MessageChain,
+                     member: Member,
                      channel: asyncio.Queue) -> bool:
         # 检测是否触发
         result = self.__find_obj(message)

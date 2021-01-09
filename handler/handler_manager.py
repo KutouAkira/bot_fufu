@@ -90,7 +90,7 @@ class HandlerManager:
 
                 # 若handler拦截了这条消息
                 try:
-                    if await handler.handle(app, subject, message, channel):
+                    if await handler.handle(app, subject, message, member, channel):
                         break
                 except Exception as exc:
                     logger.exception(exc)

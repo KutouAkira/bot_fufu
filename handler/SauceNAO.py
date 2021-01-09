@@ -7,7 +7,7 @@ import requests
 from PIL import Image as PIL_Image
 import typing as T
 
-from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend, Member
 from graia.application.message.elements.internal import Image
 from loguru import logger
 
@@ -44,15 +44,13 @@ class SauceNAO(AbstractMessageHandler):
                     logger.info('Remaining Searches 30s|24h: ' + str(results['header']['short_remaining']) + '|' + str(
                         results['header']['long_remaining']))
                     break
-                    '''
-                    if int(results['header']['status']) == 0:
-                        break
-                    else:
-                        if int(results['header']['status']) > 0:
-                            return '\nAPI Error.\n'+str(results['header']['status'])
-                        else:
-                            return '\nBad image or other request error.'
-                    '''
+                    # if int(results['header']['status']) == 0:
+                    #     break
+                    # else:
+                    #     if int(results['header']['status']) > 0:
+                    #         return '\nAPI Error.\n'+str(results['header']['status'])
+                    #     else:
+                    #         return '\nBad image or other request error.'
                 else:
                     return '\nBad image, or API failure.'
 
@@ -85,6 +83,7 @@ class SauceNAO(AbstractMessageHandler):
     async def handle(self, app: GraiaMiraiApplication,
                      subject: T.Union[Group, Friend],
                      message: MessageChain,
+                     member: Member,
                      channel: asyncio.Queue) -> bool:
         # 检测是否触发
         accept = False

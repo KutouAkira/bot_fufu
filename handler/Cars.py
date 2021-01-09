@@ -13,17 +13,31 @@ import json
 import os
 import typing as T
 
-from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend, Member
 from graia.application.message.elements.internal import Plain, Image_LocalFile
 from loguru import logger
 from utils import match_groups
 
 from .abstract_message_handler import AbstractMessageHandler
 
-
 class Cars(AbstractMessageHandler):
-    def __check__(self, message: MessageChain):
+    def __init__(self, tag: str, settings: dict, **kwargs):
+        super().__init__(tag, settings, **kwargs)
+        if self.source == "yml":
+            self.imgs = yaml.load(open(self.yml_path, 'r', encoding='utf-8').read(), Loader=yaml.FullLoader)
+
+    def __check__(self, message: MessageChain,
+                  member: Member,):
         content = message.asDisplay()
+        if member.id in self.admin and content == self.reload_trigger:
+            try:
+                imgs = yaml.load(open(self.yml_path, 'r', encoding='utf-8').read(), Loader=yaml.FullLoader)
+                msg = MessageChain.create([Plain("重载完成，总共有:\n")])
+                for imgset in imgs:
+                    msg = MessageChain.join(msg, MessageChain.create([Plain(f"{imgset}: {str(len(imgs[imgset]))}张\n")]))
+                return content, msg
+            except Exception as e:
+                return content, e
         if content == self.normal_trigger or content == self.r18_trigger:
             return content, None
         if content[:2] == self.normal_trigger or content[:2] == self.r18_trigger:
@@ -64,11 +78,11 @@ class Cars(AbstractMessageHandler):
             res = requests.get(url).text
             choice = json.loads(res)['data'][0]
         elif src == 'yml':
-            imgs = yaml.load(open(self.yml_path, 'r', encoding='utf-8').read(), Loader=yaml.FullLoader)
+            # imgs = yaml.load(open(self.yml_path, 'r', encoding='utf-8').read(), Loader=yaml.FullLoader)
             if kind == 'normal':
-                choice = random.choice(imgs['normal'])
+                choice = random.choice(self.imgs['normal'])
             elif kind == 'R18':
-                choice = random.choice(imgs['R18'])
+                choice = random.choice(self.imgs['R18'])
         else:
             normal_list = self.fileListFunc(self.local_dir)
             r18_list = self.fileListFunc(self.local_r18_dir)
@@ -250,11 +264,15 @@ class Cars(AbstractMessageHandler):
     async def handle(self, app: GraiaMiraiApplication,
                      subject: T.Union[Group, Friend],
                      message: MessageChain,
+                     member: Member,
                      channel: asyncio.Queue) -> bool:
 
-        result = self.__check__(message)
+        result = self.__check__(message, member)
         if result:
             car, mod = result
+            if car == self.reload_trigger:
+                await channel.put(mod)
+                return True
             src = self.source
             r18_rotate = self.r18_rotate
             if car == self.normal_trigger:

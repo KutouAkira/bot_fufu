@@ -7,7 +7,7 @@ import json
 import time
 import datetime
 import typing as T
-from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend
+from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend, Member
 from graia.application.message.elements.internal import Plain, Image_NetworkAddress
 from utils import match_groups
 from loguru import logger
@@ -145,6 +145,7 @@ class BangDream(AbstractMessageHandler):
     async def handle(self, app: GraiaMiraiApplication,
                      subject: T.Union[Group, Friend],
                      message: MessageChain,
+                     member: Member,
                      channel: asyncio.Queue) -> bool:
 
         req = self.__find_server(message)
