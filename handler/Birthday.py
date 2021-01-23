@@ -19,7 +19,7 @@ class Birthday(AbstractMessageHandler):
         url = f"https://zh.moegirl.org.cn/Category:{month}月{day}日"
         req = requests.get(url).content
         soup = BeautifulSoup(req, 'html.parser')
-        res = soup.find('div', id='mw-pages').find_all('a')
+        res = soup.find('div', class_='mw-category').find_all('a')
         msg = f"今天是{year}年{month}月{day}日\n今天生日的二刺螈人物有: "
         for people in res:
             msg += '\n' + people.string
