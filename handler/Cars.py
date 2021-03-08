@@ -27,9 +27,14 @@ class Cars(AbstractMessageHandler):
             self.imgs = yaml.load(open(self.yml_path, 'r', encoding='utf-8').read(), Loader=yaml.FullLoader)
 
     def __check__(self, message: MessageChain,
+                  subject: T.Union[Group, Friend],
                   member: Member,):
         content = message.asDisplay()
-        if member.id in self.admin and content == self.reload_trigger:
+        if isinstance(subject, Group):
+            id = member.id
+        else:
+            id = subject.id
+        if id in self.admin and content == self.reload_trigger:
             try:
                 imgs = yaml.load(open(self.yml_path, 'r', encoding='utf-8').read(), Loader=yaml.FullLoader)
                 msg = MessageChain.create([Plain("重载完成，总共有:\n")])
@@ -267,7 +272,7 @@ class Cars(AbstractMessageHandler):
                      member: Member,
                      channel: asyncio.Queue) -> bool:
 
-        result = self.__check__(message, member)
+        result = self.__check__(message, subject, member)
         if result:
             car, mod = result
             if car == self.reload_trigger:
