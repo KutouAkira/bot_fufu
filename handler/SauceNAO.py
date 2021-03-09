@@ -63,14 +63,17 @@ class SauceNAO(AbstractMessageHandler):
                     res = '\n相似度: ' + result['header']['similarity']
                     for key in result['data']:
                         if key == "member_name" or key == "creator":
-                            res += '\n作者: ' + result['data'][key]
+                            res += '\n作者: ' + str(result['data'][key])
+                        if key == "jp_name" or key == "title":
+                            res += '\n作品名: ' + result['data'][key]
                         if (key == "source" or key == "ext_urls") and "http" in str(result['data'][key]):
                             if isinstance(result['data'][key], str):
                                 urls.append(result['data'][key])
                             else:
                                 for url in result['data'][key]:
                                     urls.append(url)
-                    res += '\n链接: ' + '\n      - '.join(url for url in urls)
+                    if urls:
+                        res += '\n链接: ' + '\n      - '.join(url for url in urls)
             else:
                 res = '\n没有结果'
 
