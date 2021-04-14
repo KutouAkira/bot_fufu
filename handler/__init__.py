@@ -1,4 +1,4 @@
-# from .AntiEro import AntiEro
+from .AntiEro import AntiEro
 from .BangDream import BangDream
 from .Bangumi import Bangumi
 from .Birthday import Birthday
@@ -10,7 +10,7 @@ from .SauceNAO import SauceNAO
 from .Translate import Translate
 
 __all__ = (
-    # "AntiEro",
+    "AntiEro",
     "BangDream",
     "Bangumi",
     "Birthday",

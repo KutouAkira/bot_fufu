@@ -31,6 +31,12 @@ manager.register(
     ban_member=settings["help"]["ban"] if settings['help']['enable'] else []
 )
 manager.register(
+    AntiEro(tag="AntiEro", settings=settings["AntiEro"]),
+    allow_friend=settings["AntiEro"]["friend"] if settings['AntiEro']['enable'] else [],
+    allow_group=settings["AntiEro"]["group"] if settings['AntiEro']['enable'] else [],
+    ban_member=settings["AntiEro"]["ban"] if settings['AntiEro']['enable'] else []
+)
+manager.register(
     ISML(tag="isml", settings=settings["isml"]),
     allow_friend=settings["isml"]["friend"] if settings['isml']['enable'] else [],
     allow_group=settings["isml"]["group"] if settings['isml']['enable'] else [],

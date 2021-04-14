@@ -16,7 +16,8 @@
     "admin": 123456789,
     "APP_ID": "your_baidu_aip_APP_ID",
     "API_KEY": "your_baidu_aip_API_KEY",
-    "SECRET_KEY": "your_baidu_aip_SECRET_KEY"
+    "SECRET_KEY": "your_baidu_aip_SECRET_KEY",
+    "threshold": 0.8
   },
   "bang_dream": {
     "enable": true,
