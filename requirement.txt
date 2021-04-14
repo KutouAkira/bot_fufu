@@ -1,11 +1,11 @@
 graia-application-mirai
-graia-template
-loguru
 json5
+loguru
+requests
+bs4
 pillow
-baidu-aip
 numpy
 pyyaml
+baidu-aip
 tensorflow
 scikit-image
-sortedcontainers

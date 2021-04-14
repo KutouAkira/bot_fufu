@@ -3,6 +3,7 @@ import asyncio
 import requests
 import json
 import time
+import datetime
 import typing as T
 
 from graia.application import MessageChain, GraiaMiraiApplication, Group, Friend, Member
@@ -11,7 +12,6 @@ from utils import match_groups
 
 from .abstract_message_handler import AbstractMessageHandler
 
-url = 'https://bangumi.bilibili.com/web_api/timeline_global'
 youbi_map = {'前天的': 4, '昨天的': 5, '今天的': 6, '明天的': 7, '后天的': 8}
 
 
@@ -33,34 +33,51 @@ class Bangumi(AbstractMessageHandler):
         return False
 
     def __get_bangumi(self, youbi: int):
+        if self.source == 'bilibili':
+            url = 'https://bangumi.bilibili.com/web_api/timeline_global'
+        else:
+            url = 'https://api.bgm.tv/calendar'
         json_res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                                                             'AppleWebKit/537.36 (KHTML, like Gecko) '
                                                             'Chrome/81.0.4044.122 Safari/537.36'}).text
         res = json.loads(json_res)
         ret = ''
-        now = time.strftime("%m.%d %H:%M", time.localtime())
-        delay = []
-        if res['result'][youbi]['seasons']:
-            for i in res['result'][youbi]['seasons']:
-                if not i['delay']:
-                    ret += i['title'] + '\n'
-                    if youbi < 6:
-                        t = '00.00 ' + i['pub_time']
-                    elif youbi > 6:
-                        t = '99.99 ' + i['pub_time']
+        if self.source == 'bilibili':
+            now = time.strftime("%m.%d %H:%M", time.localtime())
+            delay = []
+            if res['result'][youbi]['seasons']:
+                for i in res['result'][youbi]['seasons']:
+                    if not i['delay']:
+                        ret += i['title'] + '\n'
+                        if youbi < 6:
+                            t = '00.00 ' + i['pub_time']
+                        elif youbi > 6:
+                            t = '99.99 ' + i['pub_time']
+                        else:
+                            t = time.strftime("%m.%d ", time.localtime()) + i['pub_time']
+                        if t > now:
+                            ret += i['pub_index'] + '将于' + i['pub_time'] + '更新\n\n'
+                        else:
+                            ret += i['pub_index'] + '已于' + i['pub_time'] + '更新\n\n'
                     else:
-                        t = time.strftime("%m.%d ", time.localtime()) + i['pub_time']
-                    if t > now:
-                        ret += i['pub_index'] + '将于' + i['pub_time'] + '更新\n\n'
-                    else:
-                        ret += i['pub_index'] + '已于' + i['pub_time'] + '更新\n\n'
-                else:
-                    delay.append(i['title'])
+                        delay.append(i['title'])
+            else:
+                ret = "当天没有番剧哦  "
+            ret = ret[:-2]
+            if delay:
+                ret += '\n\n' + '、'.join(delay) + '本周停更'
         else:
-            ret = "当天没有番剧哦  "
-        ret = ret[:-2]
-        if delay:
-            ret += '\n\n' + '、'.join(delay) + '本周停更'
+            weekday = (datetime.datetime.now().weekday() + youbi - 6) % 7
+            now = time.strftime("%Y-%m-%d", time.localtime())
+            if res[weekday]["items"]:
+                for i in res[weekday]["items"]:
+                    if i["air_date"] < now:
+                        if i["name_cn"]:
+                            ret += i["name_cn"] + '\n'
+                        else:
+                            ret += i["name"] + '\n'
+            else:
+                ret = "当天没有番剧哦  "
         return ret
 
     async def handle(self, app: GraiaMiraiApplication,
